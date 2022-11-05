@@ -71,7 +71,7 @@ def get_additional_results(num_pages):
 
 def get_num_pages(page):
     soup = BeautifulSoup(page, features="html.parser")
-    page_nums = soup.find_all('a', {'id': re.compile(r'searchPageLink_[0-9]')})
+    page_nums = soup.find_all("a", {"id": re.compile(r'searchPageLink_[0-9]')})
     num_pages = 0
 
     for page_num in page_nums:
@@ -96,7 +96,7 @@ def get_new_games(games_dict):
 
 def read_games():
     if exists("games.json"):
-        with open('games.json', 'r') as openfile:
+        with open("games.json", "r") as openfile:
             games_dict = json.load(openfile)
     else:
         games_dict = {}
