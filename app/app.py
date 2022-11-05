@@ -4,9 +4,9 @@ from bs4 import BeautifulSoup
 import json
 import re
 
-# An application to search for the availability of items at the Cuyahoga County Public Library via a specified search term.
+# Application to search for the availability of items at the Cuyahoga County Public Library via a search term.
 
-search_term = "ps5"
+search_term = "hello world"
 library_url_prefix = f'https://encore.cuyahoga.lib.oh.us/iii/encore/search/C__S{search_term}__P'
 query_string = "lang=eng&suite=gold"
 changelog_filepath = "changelog.json"
@@ -14,10 +14,7 @@ items_filepath = "items.json"
 
 
 def get_search_url(page_num):
-    if library_url_prefix != "FILE NOT FOUND":
-        search_url = f'{library_url_prefix}{page_num}__Orightresult__U__X0?{query_string}'
-    else:
-        search_url = "FILE NOT FOUND"
+    search_url = f'{library_url_prefix}{page_num}__Orightresult__U__X0?{query_string}'
 
     return search_url
 
@@ -108,17 +105,14 @@ def save_file(items_json, filename):
 
 def main():
     first_page_url = get_search_url("0")
-    if first_page_url != "FILE NOT FOUND":
-        first_page = requests.get(first_page_url).text
-        num_pages = get_num_pages(first_page)
-        items_dict = get_items(first_page)
-        additional_results = get_additional_results(num_pages)
-        items_dict = items_dict | additional_results
-        new_items = get_new_items(items_dict)
-        save_file(items_dict, items_filepath)
-        save_file(new_items, changelog_filepath)
-    else:
-        print("No library_url_prefix.txt file found. Please add this file with the proper URL prefix and try running again.")
+    first_page = requests.get(first_page_url).text
+    num_pages = get_num_pages(first_page)
+    items_dict = get_items(first_page)
+    additional_results = get_additional_results(num_pages)
+    items_dict = items_dict | additional_results
+    new_items = get_new_items(items_dict)
+    save_file(items_dict, items_filepath)
+    save_file(new_items, changelog_filepath)
 
 
 if __name__ == "__main__":
