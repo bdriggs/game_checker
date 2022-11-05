@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import json
 import re
 
-# Application to search for the availability of items at the Cayahoga County Public Library via a search term.
+# An application to search for the availability of items at the Cuyahoga County Public Library via a specified search term.
 
 search_term = "ps5"
 library_url_prefix = f'https://encore.cuyahoga.lib.oh.us/iii/encore/search/C__S{search_term}__P'
