@@ -6,7 +6,12 @@ import re
 
 
 def get_search_url(page_num):
-    search_url = f'{library_url_prefix}{page_num}__Orightresult__U__X0?{query_string}'
+    library_url_prefix = get_library_url_prefix()
+    if library_url_prefix != "FILE NOT FOUND":
+        query_string = "lang=eng&suite=gold"
+        search_url = f'{library_url_prefix}{page_num}__Orightresult__U__X0?{query_string}'
+    else:
+        search_url = "FILE NOT FOUND"
 
     return search_url
 
@@ -99,27 +104,29 @@ def save_changelog(changelog):
         outfile.write(changelog_string)
 
 
-library_url_prefix = get_library_url_prefix()
-
-if library_url_prefix != "FILE NOT FOUND":
-    query_string = "lang=eng&suite=gold"
+def main():
     first_page_url = get_search_url("0")
-    first_page = requests.get(first_page_url).text
-    games_dict = get_games(first_page)
+    if first_page_url != "FILE NOT FOUND":
+        first_page = requests.get(first_page_url).text
+        games_dict = get_games(first_page)
 
-    num_pages = get_num_pages(first_page)
-    additional_results = get_additional_results(num_pages)
-    games_dict = games_dict | additional_results
+        num_pages = get_num_pages(first_page)
+        additional_results = get_additional_results(num_pages)
+        games_dict = games_dict | additional_results
 
-    old_games_dict = read_games()
-    new_games = {}
+        old_games_dict = read_games()
+        new_games = {}
 
-    for game, status in games_dict.items():
-        if game in old_games_dict:
-            if status != old_games_dict[game] and status == "AVAILABLE":
-                new_games[game] = status
+        for game, status in games_dict.items():
+            if game in old_games_dict:
+                if status != old_games_dict[game] and status == "AVAILABLE":
+                    new_games[game] = status
 
-    save_games(games_dict)
-    save_changelog(new_games)
-else:
-    print("No library_url_prefix.txt file found. Please add this file with the proper URL prefix and try running again.")
+        save_games(games_dict)
+        save_changelog(new_games)
+    else:
+        print("No library_url_prefix.txt file found. Please add this file with the proper URL prefix and try running again.")
+
+
+if __name__ == "__main__":
+    main()
