@@ -3,6 +3,7 @@ from os.path import exists
 from bs4 import BeautifulSoup
 import json
 import re
+import random
 
 
 def get_library_url_prefix():
@@ -35,7 +36,11 @@ def get_games(page):
     for game in games:
         game_title = get_title(game)
         game_status = get_status(game)
-        game_dict[game_title] = game_status
+        if game_title not in game_dict:
+            game_dict[game_title] = game_status
+        else:
+            random_string = str(random.randrange(100))
+            game_dict[f'{game_title}{random_string}'] = game_status
 
     return game_dict
 
@@ -61,10 +66,11 @@ def get_status(game):
 
 
 def get_additional_results(num_pages):
-    for page_num in range(num_pages):
+    additional_results = {}
+    for page_num in range(1, num_pages):
         current_page_url = get_search_url(str(page_num))
         current_page = requests.get(current_page_url).text
-        additional_results = get_games(current_page)
+        additional_results = additional_results | get_games(current_page)
 
     return additional_results
 
@@ -96,6 +102,17 @@ def get_new_games(games_dict):
     return new_games
 
 
+def add_additional_games(games_dict, additional_results):
+    for game, status in additional_results.items():
+        if game not in games_dict:
+            games_dict[game] = status
+        else:
+            random_string = str(random.randrange(100))
+            games_dict[f'{game}{random_string}']
+
+    return games_dict
+
+
 def read_games():
     if exists("games.json"):
         with open("games.json", "r") as openfile:
@@ -106,16 +123,10 @@ def read_games():
     return games_dict
 
 
-def save_games(games_dict):
-    games_string = json.dumps(games_dict)
-    with open("games.json", "w") as outfile:
+def save_file(games_json, filename):
+    games_string = json.dumps(games_json)
+    with open(filename, "w") as outfile:
         outfile.write(games_string)
-
-
-def save_changelog(changelog):
-    changelog_string = json.dumps(changelog)
-    with open("changelog.json", "w") as outfile:
-        outfile.write(changelog_string)
 
 
 def main():
@@ -125,10 +136,10 @@ def main():
         num_pages = get_num_pages(first_page)
         games_dict = get_games(first_page)
         additional_results = get_additional_results(num_pages)
-        games_dict = games_dict | additional_results
+        games_dict = add_additional_games(games_dict, additional_results)
         new_games = get_new_games(games_dict)
-        save_games(games_dict)
-        save_changelog(new_games)
+        save_file(games_dict, "games.json")
+        save_file(new_games, "changelog.json")
     else:
         print("No library_url_prefix.txt file found. Please add this file with the proper URL prefix and try running again.")
 
