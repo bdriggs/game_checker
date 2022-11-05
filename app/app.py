@@ -4,21 +4,17 @@ from bs4 import BeautifulSoup
 import json
 import re
 
+# Application to search for the availability of items at the Cayahoga County Public Library via a search term.
 
-def get_library_url_prefix():
-    if exists("library_url_prefix.txt"):
-        library_file = open("library_url_prefix.txt", "r")
-        library_url_prefix = library_file.read()
-    else:
-        library_url_prefix = "FILE NOT FOUND"
-
-    return library_url_prefix
+search_term = "ps5"
+library_url_prefix = f'https://encore.cuyahoga.lib.oh.us/iii/encore/search/C__S{search_term}__P'
+query_string = "lang=eng&suite=gold"
+changelog_filepath = "changelog.json"
+items_filepath = "items.json"
 
 
 def get_search_url(page_num):
-    library_url_prefix = get_library_url_prefix()
     if library_url_prefix != "FILE NOT FOUND":
-        query_string = "lang=eng&suite=gold"
         search_url = f'{library_url_prefix}{page_num}__Orightresult__U__X0?{query_string}'
     else:
         search_url = "FILE NOT FOUND"
@@ -26,39 +22,38 @@ def get_search_url(page_num):
     return search_url
 
 
-def get_games(page):
+def get_items(page):
     soup = BeautifulSoup(page, features="html.parser")
-    games = soup.find_all(
+    items = soup.find_all(
         "div", {"id":  re.compile(r'resultRecord-.*')})
-    game_dict = {}
+    item_dict = {}
 
-    for game in games:
-        game_title = get_title(game)
-        game_status = get_status(game)
-        if game_status == "AVAILABLE":
-            game_dict[game_title] = game_status
+    for item in items:
+        item_title = get_title(item)
+        item_status = get_status(item)
+        if item_status == "AVAILABLE":
+            item_dict[item_title] = item_status
 
-    return game_dict
-
-
-def get_title(game):
-    game_title = game.find(
-        "span", {"class": "title"})
-    game_title = game_title.text.strip().upper()
-
-    return game_title
+    return item_dict
 
 
-def get_status(game):
-    game_status = game.find(
+def get_title(item):
+    item_title = item.find("span", {"class": "title"})
+    item_title = item_title.text.strip().upper()
+
+    return item_title
+
+
+def get_status(item):
+    item_status = item.find(
         "span", {"class": re.compile(r'item.*Available')})
 
-    if game_status == None:
-        game_status = "N/A"
+    if item_status == None:
+        item_status = "N/A"
     else:
-        game_status = game_status.text.strip().upper()
+        item_status = item_status.text.strip().upper()
 
-    return game_status
+    return item_status
 
 
 def get_additional_results(num_pages):
@@ -66,7 +61,7 @@ def get_additional_results(num_pages):
     for page_num in range(1, num_pages):
         current_page_url = get_search_url(str(page_num))
         current_page = requests.get(current_page_url).text
-        additional_results = additional_results | get_games(current_page)
+        additional_results = additional_results | get_items(current_page)
 
     return additional_results
 
@@ -84,31 +79,31 @@ def get_num_pages(page):
     return num_pages
 
 
-def get_new_games(games_dict):
-    old_games_dict = read_games()
-    new_games = {}
+def get_new_items(items_dict):
+    old_items_dict = read_items()
+    new_items = {}
 
-    for game, status in games_dict.items():
-        if game not in old_games_dict:
-            new_games[game] = status
+    for item, status in items_dict.items():
+        if item not in old_items_dict:
+            new_items[item] = status
 
-    return new_games
+    return new_items
 
 
-def read_games():
-    if exists("games.json"):
-        with open("games.json", "r") as openfile:
-            games_dict = json.load(openfile)
+def read_items():
+    if exists(items_filepath):
+        with open(items_filepath, "r") as openfile:
+            items_dict = json.load(openfile)
     else:
-        games_dict = {}
+        items_dict = {}
 
-    return games_dict
+    return items_dict
 
 
-def save_file(games_json, filename):
-    games_string = json.dumps(games_json)
+def save_file(items_json, filename):
+    items_string = json.dumps(items_json)
     with open(filename, "w") as outfile:
-        outfile.write(games_string)
+        outfile.write(items_string)
 
 
 def main():
@@ -116,12 +111,12 @@ def main():
     if first_page_url != "FILE NOT FOUND":
         first_page = requests.get(first_page_url).text
         num_pages = get_num_pages(first_page)
-        games_dict = get_games(first_page)
+        items_dict = get_items(first_page)
         additional_results = get_additional_results(num_pages)
-        games_dict = games_dict | additional_results
-        new_games = get_new_games(games_dict)
-        save_file(games_dict, "games.json")
-        save_file(new_games, "changelog.json")
+        items_dict = items_dict | additional_results
+        new_items = get_new_items(items_dict)
+        save_file(items_dict, items_filepath)
+        save_file(new_items, changelog_filepath)
     else:
         print("No library_url_prefix.txt file found. Please add this file with the proper URL prefix and try running again.")
 
