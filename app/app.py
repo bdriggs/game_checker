@@ -82,6 +82,18 @@ def get_num_pages(page):
     return num_pages
 
 
+def get_new_games(games_dict):
+    old_games_dict = read_games()
+    new_games = {}
+
+    for game, status in games_dict.items():
+        if game in old_games_dict:
+            if status != old_games_dict[game] and status == "AVAILABLE":
+                new_games[game] = status
+
+    return new_games
+
+
 def read_games():
     if exists("games.json"):
         with open('games.json', 'r') as openfile:
@@ -108,20 +120,11 @@ def main():
     first_page_url = get_search_url("0")
     if first_page_url != "FILE NOT FOUND":
         first_page = requests.get(first_page_url).text
-        games_dict = get_games(first_page)
-
         num_pages = get_num_pages(first_page)
+        games_dict = get_games(first_page)
         additional_results = get_additional_results(num_pages)
         games_dict = games_dict | additional_results
-
-        old_games_dict = read_games()
-        new_games = {}
-
-        for game, status in games_dict.items():
-            if game in old_games_dict:
-                if status != old_games_dict[game] and status == "AVAILABLE":
-                    new_games[game] = status
-
+        new_games = get_new_games(games_dict)
         save_games(games_dict)
         save_changelog(new_games)
     else:
