@@ -5,6 +5,16 @@ import json
 import re
 
 
+def get_library_url_prefix():
+    if exists("library_url_prefix.txt"):
+        library_file = open("library_url_prefix.txt", "r")
+        library_url_prefix = library_file.read()
+    else:
+        library_url_prefix = "FILE NOT FOUND"
+
+    return library_url_prefix
+
+
 def get_search_url(page_num):
     library_url_prefix = get_library_url_prefix()
     if library_url_prefix != "FILE NOT FOUND":
@@ -14,16 +24,6 @@ def get_search_url(page_num):
         search_url = "FILE NOT FOUND"
 
     return search_url
-
-
-def get_library_url_prefix():
-    if exists("library_url_prefix.txt"):
-        library_file = open("library_url_prefix.txt", "r")
-        library_url_prefix = library_file.read()
-    else:
-        library_url_prefix = "FILE NOT FOUND"
-
-    return library_url_prefix
 
 
 def get_games(page):
@@ -90,6 +90,8 @@ def get_new_games(games_dict):
         if game in old_games_dict:
             if status != old_games_dict[game] and status == "AVAILABLE":
                 new_games[game] = status
+        elif game not in old_games_dict and status == "AVAILABLE":
+            new_games[game] = status
 
     return new_games
 
