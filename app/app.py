@@ -3,7 +3,6 @@ from os.path import exists
 from bs4 import BeautifulSoup
 import json
 import re
-import random
 
 
 def get_library_url_prefix():
